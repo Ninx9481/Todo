@@ -1,21 +1,47 @@
 import { useState } from "react";
-import "./App.css";
+import {
+  Candy, Home, Users, Menu, LogOut, User,
+  Plus, X, MapPin, Clock, Calendar, Tag, FileText, Trash2, Pencil
+} from "lucide-react";
 
+// MUI
+import {
+  createTheme, ThemeProvider, CssBaseline,
+  AppBar, Toolbar, Typography, IconButton,
+  Button, TextField, Dialog, DialogTitle,
+  DialogContent, DialogActions, Card, CardActionArea,
+  CardContent, Chip, MenuItem, Menu as MuiMenu,
+  Divider, Box, Stack
+} from "@mui/material";
+
+// ── MUI Dark Theme ──────────────────────────────────────────
+const theme = createTheme({
+  palette: {
+    mode: "dark",
+    primary:   { main: "#38BDF8" },
+    error:     { main: "#F87171" },
+    background:{ default: "#0A0F1E", paper: "#111827" },
+    text:      { primary: "#F1F5F9", secondary: "#64748B" },
+  },
+  shape: { borderRadius: 12 },
+  typography: { fontFamily: "'Space Grotesk', sans-serif" },
+  components: {
+    MuiAppBar:    { styleOverrides: { root: { background: "rgba(10,15,30,0.85)", backdropFilter: "blur(16px)", borderBottom: "1px solid #1E2D45", boxShadow: "none" } } },
+    MuiButton:    { styleOverrides: { root: { textTransform: "none", fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600 } } },
+    MuiTextField: { styleOverrides: { root: { "& .MuiOutlinedInput-root": { background: "#1a2235", "& fieldset": { borderColor: "#1E2D45" }, "&:hover fieldset": { borderColor: "#38BDF8" } } } } },
+    MuiDialog:    { styleOverrides: { paper: { background: "#111827", border: "1px solid #1E2D45", borderRadius: 20, boxShadow: "0 0 80px rgba(56,189,248,0.1)" } } },
+    MuiCard:      { styleOverrides: { root: { background: "#111827", border: "1px solid #1E2D45", boxShadow: "none" } } },
+    MuiMenu:      { styleOverrides: { paper: { background: "#111827", border: "1px solid #1E2D45", borderRadius: 12, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" } } },
+    MuiMenuItem:  { styleOverrides: { root: { fontFamily: "'Space Grotesk', sans-serif", fontSize: 14, gap: 10 } } },
+    MuiChip:      { styleOverrides: { root: { fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, fontSize: 11 } } },
+    MuiDivider:   { styleOverrides: { root: { borderColor: "#1E2D45" } } },
+  },
+});
+
+// ── Data ────────────────────────────────────────────────────
 const activities = [
-  {
-    id: 1,
-    day: "3", month: "April",
-    name: "THIS IS FOR World Tour",
-    time: "07:30 PM", place: "Boston, MA", tag: "Concert",
-    description: "TWICE 5TH WORLD TOUR 'READY TO BE' — Floor GA standing. Doors open at 6:00 PM. Do not forget to bring your lightstick!",
-  },
-  {
-    id: 2,
-    day: "4", month: "April",
-    name: "THIS IS FOR World Tour",
-    time: "08:00 PM", place: "Boston, MA", tag: "Concert",
-    description: "Night 2 of TWICE in Boston. Seat: Section 104, Row C. Pick up tickets at will-call window.",
-  },
+  { id: 1, day: "3",  month: "April", name: "THIS IS FOR World Tour", time: "07:30 PM", place: "Boston, MA", tag: "Concert", description: "TWICE 5TH WORLD TOUR 'READY TO BE' — Floor GA standing. Doors open at 6:00 PM. Do not forget to bring your lightstick!" },
+  { id: 2, day: "4",  month: "April", name: "THIS IS FOR World Tour", time: "08:00 PM", place: "Boston, MA", tag: "Concert", description: "Night 2 of TWICE in Boston. Seat: Section 104, Row C. Pick up tickets at will-call window." },
 ];
 
 const members = [
@@ -24,256 +50,292 @@ const members = [
   { name: "Mei",  color: "#34D399", bg: "#0d2a22" },
 ];
 
+// ── App ─────────────────────────────────────────────────────
 export default function App() {
   const [page, setPage] = useState("login");
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddModal, setShowAddModal]     = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
-  const [showMenu, setShowMenu] = useState(false);
+  const [menuAnchor, setMenuAnchor]         = useState(null);
 
   const isLoggedIn = page !== "login";
+  const goTo = (p) => { setPage(p); setMenuAnchor(null); };
 
   return (
-    <div className="app">
-      <div className="bg-orb bg-orb-1" />
-      <div className="bg-orb bg-orb-2" />
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+
+      {/* background orbs */}
+      <Box sx={{ position: "fixed", width: 500, height: 500, borderRadius: "50%", background: "#38BDF8", filter: "blur(80px)", opacity: 0.12, top: -150, right: -100, pointerEvents: "none", zIndex: 0 }} />
+      <Box sx={{ position: "fixed", width: 400, height: 400, borderRadius: "50%", background: "#6366F1", filter: "blur(80px)", opacity: 0.12, bottom: -100, left: -80,  pointerEvents: "none", zIndex: 0 }} />
 
       {/* ── NAVBAR ── */}
       {isLoggedIn && (
-        <nav className="navbar">
-          <div className="nav-logo">🍭 TWICE</div>
+        <AppBar position="fixed">
+          <Toolbar sx={{ justifyContent: "space-between" }}>
+            <Stack direction="row" alignItems="center" gap={1}>
+              <Candy size={20} color="#38BDF8" />
+              <Typography sx={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#38BDF8", fontSize: 20 }}>
+                TWICE
+              </Typography>
+            </Stack>
 
-          <div className="nav-links">
-            <button
-              className={`nav-btn ${page === "home" ? "nav-btn-active" : "nav-btn-ghost"}`}
-              onClick={() => { setPage("home"); setShowMenu(false); }}
-            >
-              Home
-            </button>
-            <button
-              className={`nav-btn ${page === "credits" ? "nav-btn-active" : "nav-btn-ghost"}`}
-              onClick={() => { setPage("credits"); setShowMenu(false); }}
-            >
-              Credit
-            </button>
-
-            {/* Hamburger */}
-            <div className="hamburger-wrapper">
-              <button
-                className={`hamburger-btn ${showMenu ? "hamburger-btn-active" : ""}`}
-                onClick={() => setShowMenu((v) => !v)}
+            <Stack direction="row" alignItems="center" gap={1}>
+              <Button
+                startIcon={<Home size={15} />}
+                onClick={() => goTo("home")}
+                variant={page === "home" ? "contained" : "text"}
+                color="primary"
+                size="small"
               >
-                <span />
-                <span />
-                <span />
-              </button>
+                Home
+              </Button>
+              <Button
+                startIcon={<Users size={15} />}
+                onClick={() => goTo("credits")}
+                variant={page === "credits" ? "contained" : "text"}
+                color="primary"
+                size="small"
+              >
+                Credit
+              </Button>
 
-              {showMenu && (
-                <>
-                  <div className="hamburger-backdrop" onClick={() => setShowMenu(false)} />
-                  <div className="hamburger-dropdown">
-                    <button
-                      className="dropdown-item dropdown-item-danger"
-                      onClick={() => { setPage("login"); setShowMenu(false); }}
-                    >
-                      <span>→</span> Log Out
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </nav>
+              {/* Hamburger → MUI IconButton + Menu */}
+              <IconButton
+                onClick={(e) => setMenuAnchor(e.currentTarget)}
+                sx={{ border: "1px solid #1E2D45", borderRadius: "8px", width: 36, height: 36, color: menuAnchor ? "#38BDF8" : "#64748B" }}
+              >
+                <Menu size={16} />
+              </IconButton>
+
+              <MuiMenu
+                anchorEl={menuAnchor}
+                open={Boolean(menuAnchor)}
+                onClose={() => setMenuAnchor(null)}
+                transformOrigin={{ horizontal: "right", vertical: "top" }}
+                anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+              >
+                <MenuItem onClick={() => goTo("profile")}>
+                  <User size={15} /> Profile
+                </MenuItem>
+                <Divider />
+                <MenuItem onClick={() => goTo("login")} sx={{ color: "#F87171" }}>
+                  <LogOut size={15} /> Log Out
+                </MenuItem>
+              </MuiMenu>
+            </Stack>
+          </Toolbar>
+        </AppBar>
       )}
 
       {/* ── ADD MODAL ── */}
-      {showAddModal && (
-        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-title">Add Activity</div>
-              <button className="modal-close" onClick={() => setShowAddModal(false)}>✕</button>
-            </div>
+      <Dialog open={showAddModal} onClose={() => setShowAddModal(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          Add Activity
+          <IconButton size="small" onClick={() => setShowAddModal(false)} sx={{ color: "#64748B" }}>
+            <X size={14} />
+          </IconButton>
+        </DialogTitle>
 
-            <div className="form-group">
-              <label className="form-label">Activity Name</label>
-              <input className="form-input" type="text" placeholder="e.g. TWICE World Tour" />
-            </div>
+        <DialogContent>
+          <Stack gap={2} mt={1}>
+            <TextField label="Activity Name" placeholder="e.g. TWICE World Tour" fullWidth />
 
-            <div className="modal-row">
-              <div className="form-group">
-                <label className="form-label">Date</label>
-                <input className="form-input" type="date" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Time</label>
-                <input className="form-input" type="time" />
-              </div>
-            </div>
+            <Stack direction="row" gap={2}>
+              <TextField label="Date" type="date" fullWidth InputLabelProps={{ shrink: true }}
+                InputProps={{ startAdornment: <Calendar size={15} style={{ marginRight: 8, color: "#F1F5F9" }} /> }} />
+              <TextField label="Time" type="time" fullWidth InputLabelProps={{ shrink: true }}
+                InputProps={{ startAdornment: <Clock size={15} style={{ marginRight: 8, color: "#F1F5F9" }} /> }} />
+            </Stack>
 
-            <div className="modal-row">
-              <div className="form-group">
-                <label className="form-label">Place</label>
-                <input className="form-input" type="text" placeholder="e.g. Boston, MA" />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Tag</label>
-                <input className="form-input" type="text" placeholder="e.g. Concert" />
-              </div>
-            </div>
+            <Stack direction="row" gap={2}>
+              <TextField label="Place" placeholder="e.g. Boston, MA" fullWidth
+                InputProps={{ startAdornment: <MapPin size={15} style={{ marginRight: 8, color: "#64748B" }} /> }} />
+              <TextField label="Tag" placeholder="e.g. Concert" fullWidth
+                InputProps={{ startAdornment: <Tag size={15} style={{ marginRight: 8, color: "#64748B" }} /> }} />
+            </Stack>
 
-            <div className="form-group">
-              <label className="form-label">Description</label>
-              <textarea className="form-input form-textarea" placeholder="Add details, notes, or reminders..." />
-            </div>
+            <TextField label="Description" placeholder="Add details, notes, or reminders..."
+              multiline minRows={3} fullWidth
+              InputProps={{ startAdornment: <FileText size={15} style={{ marginRight: 8, color: "#64748B", alignSelf: "flex-start", marginTop: 4 }} /> }} />
+          </Stack>
+        </DialogContent>
 
-            <div className="modal-actions">
-              <button className="modal-btn-cancel" onClick={() => setShowAddModal(false)}>Cancel</button>
-              <button className="modal-btn-submit">Add Activity</button>
-            </div>
-          </div>
-        </div>
-      )}
+        <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+          <Button fullWidth variant="outlined" color="inherit" sx={{ color: "#64748B", borderColor: "#1E2D45" }} onClick={() => setShowAddModal(false)}>
+            Cancel
+          </Button>
+          <Button fullWidth variant="contained" startIcon={<Plus size={15} />}>
+            Add Activity
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── DETAIL MODAL ── */}
-      {selectedActivity && (
-        <div className="modal-overlay" onClick={() => setSelectedActivity(null)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="detail-tag">{selectedActivity.tag}</div>
-              <button className="modal-close" onClick={() => setSelectedActivity(null)}>✕</button>
-            </div>
+      <Dialog open={Boolean(selectedActivity)} onClose={() => setSelectedActivity(null)} fullWidth maxWidth="sm">
+        {selectedActivity && (
+          <>
+            <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Chip label={selectedActivity.tag} size="small" sx={{ background: "#38BDF822", color: "#38BDF8", border: "1px solid #38BDF833" }} />
+              <IconButton size="small" onClick={() => setSelectedActivity(null)} sx={{ color: "#64748B" }}>
+                <X size={14} />
+              </IconButton>
+            </DialogTitle>
 
-            <div className="detail-title">{selectedActivity.name}</div>
+            <DialogContent>
+              <Typography sx={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 22, mb: 2 }}>
+                {selectedActivity.name}
+              </Typography>
 
-            <div className="detail-meta-grid">
-              <div className="detail-meta-item">
-                <span className="detail-meta-icon">📅</span>
-                <div>
-                  <div className="detail-meta-label">Date</div>
-                  <div className="detail-meta-value">{selectedActivity.day} {selectedActivity.month}</div>
-                </div>
-              </div>
-              <div className="detail-meta-item">
-                <span className="detail-meta-icon">🕐</span>
-                <div>
-                  <div className="detail-meta-label">Time</div>
-                  <div className="detail-meta-value">{selectedActivity.time}</div>
-                </div>
-              </div>
-              <div className="detail-meta-item">
-                <span className="detail-meta-icon">📍</span>
-                <div>
-                  <div className="detail-meta-label">Place</div>
-                  <div className="detail-meta-value">{selectedActivity.place}</div>
-                </div>
-              </div>
-            </div>
+              <Stack gap={1.5} mb={2}>
+                {[
+                  { icon: <Calendar size={18} color="#38BDF8" />, label: "Date",  value: `${selectedActivity.day} ${selectedActivity.month}` },
+                  { icon: <Clock    size={18} color="#38BDF8" />, label: "Time",  value: selectedActivity.time },
+                  { icon: <MapPin   size={18} color="#38BDF8" />, label: "Place", value: selectedActivity.place },
+                ].map((item) => (
+                  <Box key={item.label} sx={{ display: "flex", alignItems: "center", gap: 1.5, background: "#1a2235", borderRadius: 2, px: 2, py: 1.5 }}>
+                    {item.icon}
+                    <Box>
+                      <Typography variant="caption" sx={{ color: "#64748B", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>{item.label}</Typography>
+                      <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{item.value}</Typography>
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
 
-            {selectedActivity.description && (
-              <div className="detail-desc-box">
-                <div className="detail-meta-label" style={{ marginBottom: "8px" }}>Description</div>
-                <div className="detail-desc-text">{selectedActivity.description}</div>
-              </div>
-            )}
+              {selectedActivity.description && (
+                <Box sx={{ background: "#1a2235", borderRadius: 2, p: 2 }}>
+                  <Typography variant="caption" sx={{ color: "#64748B", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600, display: "block", mb: 1 }}>Description</Typography>
+                  <Typography sx={{ fontSize: 14, color: "#CBD5E1", lineHeight: 1.7 }}>{selectedActivity.description}</Typography>
+                </Box>
+              )}
+            </DialogContent>
 
-            <div className="modal-actions" style={{ marginTop: "24px" }}>
-              <button className="modal-btn-delete">🗑 Delete</button>
-              <button className="modal-btn-submit">✏️ Edit</button>
-            </div>
-          </div>
-        </div>
-      )}
+            <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
+              <Button fullWidth variant="outlined" color="error" startIcon={<Trash2 size={14} />}>Delete</Button>
+              <Button fullWidth variant="contained" startIcon={<Pencil size={14} />}>Edit</Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
 
       {/* ── LOGIN PAGE ── */}
       {page === "login" && (
-        <div className="page">
-          <div className="login-card">
-            <div className="login-icon">🍭</div>
-            <div className="login-title">Welcome</div>
-            <div className="login-sub">Please log in to continue.</div>
+        <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", px: 3, position: "relative", zIndex: 1 }}>
+          <Card sx={{ width: "100%", maxWidth: 420, borderRadius: 4, p: 2, boxShadow: "0 0 60px rgba(56,189,248,0.08)" }}>
+            <CardContent>
+              <Box sx={{ width: 52, height: 52, background: "linear-gradient(135deg,#38BDF8,#6366F1)", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", mb: 3 }}>
+                <Candy size={26} color="#fff" />
+              </Box>
+              <Typography sx={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 28, mb: 0.5 }}>Welcome</Typography>
+              <Typography sx={{ color: "#64748B", fontSize: 14, mb: 4 }}>Please log in to continue.</Typography>
 
-            <div className="form-group">
-              <label className="form-label">Username</label>
-              <input className="form-input" type="text" placeholder="Enter your username"
-                value={user} onChange={(e) => setUser(e.target.value)} />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Password</label>
-              <input className="form-input" type="password" placeholder="Enter your password"
-                value={pass} onChange={(e) => setPass(e.target.value)} />
-            </div>
-
-            <button className="submit-btn" onClick={() => setPage("home")}>Login →</button>
-          </div>
-        </div>
+              <Stack gap={2.5}>
+                <TextField label="Username" placeholder="Enter your username" fullWidth value={user} onChange={(e) => setUser(e.target.value)} />
+                <TextField label="Password" type="password" placeholder="Enter your password" fullWidth value={pass} onChange={(e) => setPass(e.target.value)} />
+                <Button fullWidth variant="contained" size="large" onClick={() => setPage("home")}
+                  sx={{ background: "linear-gradient(135deg,#38BDF8,#6366F1)", mt: 1, py: 1.5, fontSize: 15 }}>
+                  Login →
+                </Button>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Box>
       )}
 
       {/* ── HOME PAGE ── */}
       {page === "home" && (
-        <div className="page page-top">
-          <div className="home-wrapper">
-            <div className="home-header">
-              <div className="home-greeting">👋 Hello, {user}</div>
-              <div className="home-title">Activity, <span>In coming</span></div>
-            </div>
+        <Box sx={{ pt: "100px", px: 3, pb: 5, position: "relative", zIndex: 1, maxWidth: 760, margin: "0 auto" }}>
+          <Box mb={4}>
+            <Typography sx={{ fontSize: 13, color: "#38BDF8", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", mb: 1 }}>
+              Hello, {user}
+            </Typography>
+            <Typography sx={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 38, lineHeight: 1.1 }}>
+              Activity, <Box component="span" sx={{ color: "#38BDF8" }}>In coming</Box>
+            </Typography>
+          </Box>
 
-            <div className="section-header">
-              <div className="section-label">All Schedules</div>
-              <button className="add-btn" onClick={() => setShowAddModal(true)}>+ Add</button>
-            </div>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "#64748B" }}>
+              All Schedules
+            </Typography>
+            <Button variant="contained" size="small" startIcon={<Plus size={14} />} onClick={() => setShowAddModal(true)}
+              sx={{ fontSize: 13, fontWeight: 700, color: "#0A0F1E" }}>
+              Add
+            </Button>
+          </Stack>
 
-            <div className="activities-grid">
-              {activities.map((a) => (
-                <div className="activity-card" key={a.id} onClick={() => setSelectedActivity(a)}>
-                  <div className="activity-date-box">
-                    <div className="activity-date-day">{a.day}</div>
-                    <div className="activity-date-month">{a.month}</div>
-                  </div>
-                  <div className="activity-info">
-                    <div className="activity-name">{a.name}</div>
-                    <div className="activity-meta">
-                      <span>🕐 {a.time}</span>
-                      <span>📍 {a.place}</span>
-                    </div>
-                  </div>
-                  <div className="activity-tag">{a.tag}</div>
-                  <div className="activity-arrow">›</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+          <Stack gap={1.5}>
+            {activities.map((a) => (
+              <Card key={a.id} sx={{ borderRadius: 3, transition: "all 0.2s", "&:hover": { borderColor: "#38BDF855", transform: "translateX(4px)" } }}>
+                <CardActionArea onClick={() => setSelectedActivity(a)}>
+                  <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5, py: 2.5 }}>
+                    <Box sx={{ minWidth: 56, textAlign: "center", background: "#1a2235", borderRadius: 2, py: 1.5, px: 1 }}>
+                      <Typography sx={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 22, color: "#38BDF8", lineHeight: 1 }}>{a.day}</Typography>
+                      <Typography sx={{ fontSize: 10, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, mt: 0.3 }}>{a.month}</Typography>
+                    </Box>
+                    <Box flex={1}>
+                      <Typography sx={{ fontWeight: 600, fontSize: 16, mb: 0.5 }}>{a.name}</Typography>
+                      <Stack direction="row" gap={1.5}>
+                        <Typography sx={{ fontSize: 13, color: "#64748B", display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <Clock size={12} /> {a.time}
+                        </Typography>
+                        <Typography sx={{ fontSize: 13, color: "#64748B", display: "flex", alignItems: "center", gap: 0.5 }}>
+                          <MapPin size={12} /> {a.place}
+                        </Typography>
+                      </Stack>
+                    </Box>
+                    <Chip label={a.tag} size="small" sx={{ background: "#38BDF822", color: "#38BDF8", border: "1px solid #38BDF833" }} />
+                    <Typography sx={{ fontSize: 22, color: "#1E2D45" }}>›</Typography>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            ))}
+          </Stack>
+        </Box>
       )}
 
       {/* ── CREDITS PAGE ── */}
       {page === "credits" && (
-        <div className="page">
-          <div className="credits-wrapper">
-            <div className="credits-header">
-              <div className="credits-badge">GROUP PROJECT</div>
-              <div className="credits-title">Members</div>
-              <div className="credits-sub">Sub</div>
-            </div>
+        <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", px: 3, pt: "80px", position: "relative", zIndex: 1 }}>
+          <Box width="100%" maxWidth={660}>
+            <Box textAlign="center" mb={6}>
+              <Chip label="GROUP PROJECT" size="small" sx={{ background: "#38BDF822", color: "#38BDF8", border: "1px solid #38BDF844", mb: 2, letterSpacing: 0.8 }} />
+              <Typography sx={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 36 }}>Members</Typography>
+              <Typography sx={{ color: "#64748B", fontSize: 15, mt: 1 }}>Sub</Typography>
+            </Box>
 
-            <div className="members-grid">
+            <Stack gap={1.5}>
               {members.map((m, i) => (
-                <div className="member-card" key={i}>
-                  <div className="member-avatar" style={{ background: m.bg, color: m.color }}>
-                    {m.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="member-name">{m.name}</div>
-                    <div className="member-role">{m.role}</div>
-                  </div>
-                </div>
+                <Card key={i} sx={{ borderRadius: 3, transition: "all 0.2s", "&:hover": { borderColor: "#38BDF855", transform: "translateY(-2px)" } }}>
+                  <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Box sx={{ width: 46, height: 46, borderRadius: 2, background: m.bg, color: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 18, flexShrink: 0 }}>
+                      {m.name.charAt(0)}
+                    </Box>
+                    <Typography sx={{ fontWeight: 600, fontSize: 15 }}>{m.name}</Typography>
+                  </CardContent>
+                </Card>
               ))}
-            </div>
-          </div>
-        </div>
+            </Stack>
+          </Box>
+        </Box>
       )}
-    </div>
+
+      {/* ── PROFILE PAGE ── */}
+      {page === "profile" && (
+        <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", px: 3, position: "relative", zIndex: 1 }}>
+          <Card sx={{ width: "100%", maxWidth: 420, borderRadius: 4, p: 2, textAlign: "center" }}>
+            <CardContent>
+              <Box sx={{ width: 52, height: 52, background: "linear-gradient(135deg,#38BDF8,#6366F1)", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", mb: 3, mx: "auto" }}>
+                <User size={26} color="#fff" />
+              </Box>
+              <Typography sx={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 28, mb: 0.5 }}>{user || "Profile"}</Typography>
+              <Typography sx={{ color: "#64748B", fontSize: 14 }}>Profile page — coming soon</Typography>
+            </CardContent>
+          </Card>
+        </Box>
+      )}
+    </ThemeProvider>
   );
 }
