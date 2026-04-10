@@ -1,10 +1,8 @@
-let activities = []
-let nextId = 1
+const db = require("../../db")
 
-function createActivity(req, res) {
+async function createActivity(req, res) {
     const { activity_name, activity_date, activity_time, place, tag, description } = req.body
     const newActivity = {
-        id: nextId++,
         activity_name,
         activity_date,
         activity_time,
@@ -14,48 +12,47 @@ function createActivity(req, res) {
         user_id: req.user.id,
         created_at: new Date().toISOString()
     }
-    activities.push(newActivity)
-    res.json(newActivity)
+    const ref = await db.collection("activities").add(newActivity)
+    res.json({ id: ref.id, ...newActivity })
 }
 
-function getActivities(req, res) {
-    const myActivities = activities.filter(a => a.user_id === req.user.id)
-    res.json(myActivities)
+async function getActivities(req, res) {
+    const snapshot = await db.collection("activities")
+        .where("user_id", "==", req.user.id).get()
+    const activities = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    res.json(activities)
 }
 
-function getActivityById(req, res) {
-    const activity = activities.find(
-        a => a.id == req.params.id && a.user_id === req.user.id
-    )
-    if (!activity)
+async function getActivityById(req, res) {
+    const doc = await db.collection("activities").doc(req.params.id).get()
+    if (!doc.exists || doc.data().user_id !== req.user.id)
         return res.status(404).json({ message: "not found" })
-    res.json(activity)
+    res.json({ id: doc.id, ...doc.data() })
 }
 
-function updateActivity(req, res) {
-    const activity = activities.find(
-        a => a.id == req.params.id && a.user_id === req.user.id
-    )
-    if (!activity)
+async function updateActivity(req, res) {
+    const doc = await db.collection("activities").doc(req.params.id).get()
+    if (!doc.exists || doc.data().user_id !== req.user.id)
         return res.status(404).json({ message: "not found" })
 
-    activity.activity_name = req.body.activity_name
-    activity.activity_date = req.body.activity_date
-    activity.activity_time = req.body.activity_time
-    activity.place = req.body.place
-    activity.tag = req.body.tag
-    activity.description = req.body.description
-    res.json(activity)
+    const updated = {
+        activity_name: req.body.activity_name,
+        activity_date: req.body.activity_date,
+        activity_time: req.body.activity_time,
+        place: req.body.place,
+        tag: req.body.tag,
+        description: req.body.description
+    }
+    await db.collection("activities").doc(req.params.id).update(updated)
+    res.json({ id: req.params.id, ...updated })
 }
 
-function deleteActivity(req, res) {
-    const activity = activities.find(
-        a => a.id == req.params.id && a.user_id === req.user.id
-    )
-    if (!activity)
+async function deleteActivity(req, res) {
+    const doc = await db.collection("activities").doc(req.params.id).get()
+    if (!doc.exists || doc.data().user_id !== req.user.id)
         return res.status(404).json({ message: "not found" })
 
-    activities = activities.filter(a => a.id != req.params.id)
+    await db.collection("activities").doc(req.params.id).delete()
     res.json({ message: "deleted" })
 }
 

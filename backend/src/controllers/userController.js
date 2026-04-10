@@ -1,43 +1,42 @@
 const bcrypt = require("bcrypt")
-
-let users = [
-    {
-        id: 1,
-        name: "Admin",
-        email: "admin@example.com",
-        password_hash: bcrypt.hashSync("1234", 10),
-        created_at: new Date().toISOString()
-    }
-]
-let nextId = 2
+const db = require("../../db")
 
 async function createUser(req, res) {
     const { name, email, password } = req.body
-    const existing = users.find(u => u.email === email)
-    if (existing)
+
+    // เช็ค email ซ้ำ
+    const existing = await db.collection("users")
+        .where("email", "==", email).get()
+    if (!existing.empty)
         return res.status(400).json({ message: "email already exists" })
 
     const password_hash = await bcrypt.hash(password, 10)
     const newUser = {
-        id: nextId++,
         name,
         email,
         password_hash,
         created_at: new Date().toISOString()
     }
-    users.push(newUser)
-    
-    const { password_hash: _, ...safeUser } = newUser
-    res.json(safeUser)
+
+    const ref = await db.collection("users").add(newUser)
+    res.json({ id: ref.id, name, email, created_at: newUser.created_at })
 }
 
-function getUsers(req, res) {
-    const safeUsers = users.map(({ password_hash, ...u }) => u)
-    res.json(safeUsers)
+async function getUsers(req, res) {
+    const snapshot = await db.collection("users").get()
+    const users = snapshot.docs.map(doc => {
+        const { password_hash, ...data } = doc.data()
+        return { id: doc.id, ...data }
+    })
+    res.json(users)
 }
 
-function findUser(email) {
-    return users.find(u => u.email === email)
+async function findUser(email) {
+    const snapshot = await db.collection("users")
+        .where("email", "==", email).get()
+    if (snapshot.empty) return null
+    const doc = snapshot.docs[0]
+    return { id: doc.id, ...doc.data() }
 }
 
 module.exports = { createUser, getUsers, findUser }

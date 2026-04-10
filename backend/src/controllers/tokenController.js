@@ -4,7 +4,7 @@ const { findUser } = require("./userController")
 
 async function login(req, res) {
     const { email, password } = req.body
-    const user = findUser(email)
+    const user = await findUser(email)  // เพิ่ม await
 
     if (!user)
         return res.status(401).json({ message: "login failed" })

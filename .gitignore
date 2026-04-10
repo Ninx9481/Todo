@@ -1,4 +1,5 @@
 backend/.env
+backend/serviceAccount.json
 # Logs
 logs
 *.log
