@@ -3,9 +3,9 @@ require("dotenv").config()
 const express = require("express")
 const cors = require("cors")
 
-const userRoutes = require("./routes/userRoutes")
-const tokenRoutes = require("./routes/tokenRoutes")
-const activityRoutes = require("./routes/activityRoutes")
+const userRoutes = require("./src/routes/userRotes")
+const tokenRoutes = require("./src/routes/tokenRoutes")
+const activityRoutes = require("./src/routes/activityRoutes")
 
 const app = express()
 
