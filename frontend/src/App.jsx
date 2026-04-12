@@ -1,27 +1,27 @@
 import { useState } from "react";
+import "./App.css";
 import {
   Candy, Home, Users, Menu, LogOut, User,
   Plus, X, MapPin, Clock, Calendar, Tag, FileText, Trash2, Pencil
 } from "lucide-react";
-
-// MUI
 import {
   createTheme, ThemeProvider, CssBaseline,
   AppBar, Toolbar, Typography, IconButton,
   Button, TextField, Dialog, DialogTitle,
   DialogContent, DialogActions, Card, CardActionArea,
   CardContent, Chip, MenuItem, Menu as MuiMenu,
-  Divider, Box, Stack
+  Divider, Box, Stack, Snackbar, Alert
 } from "@mui/material";
+
 
 // ── MUI Dark Theme ──────────────────────────────────────────
 const theme = createTheme({
   palette: {
     mode: "dark",
-    primary:   { main: "#38BDF8" },
-    error:     { main: "#F87171" },
-    background:{ default: "#0A0F1E", paper: "#111827" },
-    text:      { primary: "#F1F5F9", secondary: "#64748B" },
+    primary:    { main: "#38BDF8" },
+    error:      { main: "#F87171" },
+    background: { default: "#0A0F1E", paper: "#111827" },
+    text:       { primary: "#F1F5F9", secondary: "#64748B" },
   },
   shape: { borderRadius: 12 },
   typography: { fontFamily: "'Space Grotesk', sans-serif" },
@@ -52,23 +52,35 @@ const members = [
 
 // ── App ─────────────────────────────────────────────────────
 export default function App() {
-  const [page, setPage] = useState("login");
+  const [page, setPage] = useState("signup");
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
-  const [showAddModal, setShowAddModal]     = useState(false);
+  const [showAddModal, setShowAddModal]         = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
-  const [menuAnchor, setMenuAnchor]         = useState(null);
+  const [menuAnchor, setMenuAnchor]             = useState(null);
+  const [toast, setToast] = useState({ open: false, message: "", severity: "error" });
 
-  const isLoggedIn = page !== "login";
+  const isLoggedIn = page !== "login" && page !== "signup";
   const goTo = (p) => { setPage(p); setMenuAnchor(null); };
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      {/* ── แจ้งเตือน ── */}
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={3000}
+        onClose={() => setToast({ ...toast, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert severity={toast.severity} onClose={() => setToast({ ...toast, open: false })}>
+          {toast.message}
+        </Alert>
+      </Snackbar>
 
-      {/* background orbs */}
-      <Box sx={{ position: "fixed", width: 500, height: 500, borderRadius: "50%", background: "#38BDF8", filter: "blur(80px)", opacity: 0.12, top: -150, right: -100, pointerEvents: "none", zIndex: 0 }} />
-      <Box sx={{ position: "fixed", width: 400, height: 400, borderRadius: "50%", background: "#6366F1", filter: "blur(80px)", opacity: 0.12, bottom: -100, left: -80,  pointerEvents: "none", zIndex: 0 }} />
+      {/* ── Background Orbs ── */}
+      <div className="orb-1" />
+      <div className="orb-2" />
 
       {/* ── NAVBAR ── */}
       {isLoggedIn && (
@@ -76,9 +88,7 @@ export default function App() {
           <Toolbar sx={{ justifyContent: "space-between" }}>
             <Stack direction="row" alignItems="center" gap={1}>
               <Candy size={20} color="#38BDF8" />
-              <Typography sx={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, color: "#38BDF8", fontSize: 20 }}>
-                TWICE
-              </Typography>
+              <Typography className="nav-logo-text">TWICE</Typography>
             </Stack>
 
             <Stack direction="row" alignItems="center" gap={1}>
@@ -91,20 +101,11 @@ export default function App() {
               >
                 Home
               </Button>
-              <Button
-                startIcon={<Users size={15} />}
-                onClick={() => goTo("credits")}
-                variant={page === "credits" ? "contained" : "text"}
-                color="primary"
-                size="small"
-              >
-                Credit
-              </Button>
+              
 
-              {/* Hamburger → MUI IconButton + Menu */}
               <IconButton
+                className={`hamburger-icon-btn ${menuAnchor ? "active" : ""}`}
                 onClick={(e) => setMenuAnchor(e.currentTarget)}
-                sx={{ border: "1px solid #1E2D45", borderRadius: "8px", width: 36, height: 36, color: menuAnchor ? "#38BDF8" : "#64748B" }}
               >
                 <Menu size={16} />
               </IconButton>
@@ -115,12 +116,19 @@ export default function App() {
                 onClose={() => setMenuAnchor(null)}
                 transformOrigin={{ horizontal: "right", vertical: "top" }}
                 anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+                slotProps={{
+                  paper: { sx: { mt: 1 } }
+                }}
               >
+                
                 <MenuItem onClick={() => goTo("profile")}>
                   <User size={15} /> Profile
                 </MenuItem>
+                <MenuItem onClick={() => goTo("credits")}>  {/* เพิ่มตรงนี้ */}
+                  <Users size={15} /> Credit
+                </MenuItem>
                 <Divider />
-                <MenuItem onClick={() => goTo("login")} sx={{ color: "#F87171" }}>
+                <MenuItem className="menu-item-danger" onClick={() => goTo("login")}>
                   <LogOut size={15} /> Log Out
                 </MenuItem>
               </MuiMenu>
@@ -131,9 +139,9 @@ export default function App() {
 
       {/* ── ADD MODAL ── */}
       <Dialog open={showAddModal} onClose={() => setShowAddModal(false)} fullWidth maxWidth="sm">
-        <DialogTitle sx={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <DialogTitle className="modal-title">
           Add Activity
-          <IconButton size="small" onClick={() => setShowAddModal(false)} sx={{ color: "#64748B" }}>
+          <IconButton className="modal-close-btn" size="small" onClick={() => setShowAddModal(false)}>
             <X size={14} />
           </IconButton>
         </DialogTitle>
@@ -144,26 +152,26 @@ export default function App() {
 
             <Stack direction="row" gap={2}>
               <TextField label="Date" type="date" fullWidth InputLabelProps={{ shrink: true }}
-                InputProps={{ startAdornment: <Calendar size={15} style={{ marginRight: 8, color: "#F1F5F9" }} /> }} />
+                InputProps={{ startAdornment: <Calendar size={15} className="modal-icon-white" /> }} />
               <TextField label="Time" type="time" fullWidth InputLabelProps={{ shrink: true }}
-                InputProps={{ startAdornment: <Clock size={15} style={{ marginRight: 8, color: "#F1F5F9" }} /> }} />
+                InputProps={{ startAdornment: <Clock size={15} className="modal-icon-white" /> }} />
             </Stack>
 
             <Stack direction="row" gap={2}>
               <TextField label="Place" placeholder="e.g. Boston, MA" fullWidth
-                InputProps={{ startAdornment: <MapPin size={15} style={{ marginRight: 8, color: "#64748B" }} /> }} />
+                InputProps={{ startAdornment: <MapPin size={15} className="modal-icon-muted" /> }} />
               <TextField label="Tag" placeholder="e.g. Concert" fullWidth
-                InputProps={{ startAdornment: <Tag size={15} style={{ marginRight: 8, color: "#64748B" }} /> }} />
+                InputProps={{ startAdornment: <Tag size={15} className="modal-icon-muted" /> }} />
             </Stack>
 
             <TextField label="Description" placeholder="Add details, notes, or reminders..."
               multiline minRows={3} fullWidth
-              InputProps={{ startAdornment: <FileText size={15} style={{ marginRight: 8, color: "#64748B", alignSelf: "flex-start", marginTop: 4 }} /> }} />
+              InputProps={{ startAdornment: <FileText size={15} className="modal-icon-muted-top" /> }} />
           </Stack>
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-          <Button fullWidth variant="outlined" color="inherit" sx={{ color: "#64748B", borderColor: "#1E2D45" }} onClick={() => setShowAddModal(false)}>
+          <Button fullWidth variant="outlined" color="inherit" className="modal-cancel-btn" onClick={() => setShowAddModal(false)}>
             Cancel
           </Button>
           <Button fullWidth variant="contained" startIcon={<Plus size={15} />}>
@@ -177,16 +185,14 @@ export default function App() {
         {selectedActivity && (
           <>
             <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Chip label={selectedActivity.tag} size="small" sx={{ background: "#38BDF822", color: "#38BDF8", border: "1px solid #38BDF833" }} />
-              <IconButton size="small" onClick={() => setSelectedActivity(null)} sx={{ color: "#64748B" }}>
+              <Chip className="detail-chip" label={selectedActivity.tag} size="small" />
+              <IconButton className="modal-close-btn" size="small" onClick={() => setSelectedActivity(null)}>
                 <X size={14} />
               </IconButton>
             </DialogTitle>
 
             <DialogContent>
-              <Typography sx={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 22, mb: 2 }}>
-                {selectedActivity.name}
-              </Typography>
+              <Typography className="detail-title">{selectedActivity.name}</Typography>
 
               <Stack gap={1.5} mb={2}>
                 {[
@@ -194,21 +200,21 @@ export default function App() {
                   { icon: <Clock    size={18} color="#38BDF8" />, label: "Time",  value: selectedActivity.time },
                   { icon: <MapPin   size={18} color="#38BDF8" />, label: "Place", value: selectedActivity.place },
                 ].map((item) => (
-                  <Box key={item.label} sx={{ display: "flex", alignItems: "center", gap: 1.5, background: "#1a2235", borderRadius: 2, px: 2, py: 1.5 }}>
+                  <div key={item.label} className="detail-meta-item">
                     {item.icon}
-                    <Box>
-                      <Typography variant="caption" sx={{ color: "#64748B", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>{item.label}</Typography>
-                      <Typography sx={{ fontWeight: 600, fontSize: 14 }}>{item.value}</Typography>
-                    </Box>
-                  </Box>
+                    <div>
+                      <Typography variant="caption" className="detail-meta-label">{item.label}</Typography>
+                      <Typography className="detail-meta-value">{item.value}</Typography>
+                    </div>
+                  </div>
                 ))}
               </Stack>
 
               {selectedActivity.description && (
-                <Box sx={{ background: "#1a2235", borderRadius: 2, p: 2 }}>
-                  <Typography variant="caption" sx={{ color: "#64748B", textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600, display: "block", mb: 1 }}>Description</Typography>
-                  <Typography sx={{ fontSize: 14, color: "#CBD5E1", lineHeight: 1.7 }}>{selectedActivity.description}</Typography>
-                </Box>
+                <div className="detail-desc-box">
+                  <Typography variant="caption" className="detail-meta-label">Description</Typography>
+                  <Typography className="detail-desc-text">{selectedActivity.description}</Typography>
+                </div>
               )}
             </DialogContent>
 
@@ -219,122 +225,161 @@ export default function App() {
           </>
         )}
       </Dialog>
+      {/* ── SIGNUP PAGE ── */}
+      {page === "signup" && (
+        <div className="login-page">
+          <Card className="login-card">
+            <CardContent>
+              <div className="login-icon-box">
+                <Candy size={26} color="#fff" />
+              </div>
+              <Typography className="login-title">Create Account</Typography>
+              <Typography className="login-sub">Sign up to get started.</Typography>
+
+              <Stack gap={2.5}>
+                <TextField label="Email" type="email" placeholder="Enter your email" fullWidth />
+                <TextField label="Username" placeholder="Enter your username" fullWidth />
+                <TextField label="Password" type="password" placeholder="Enter your password" fullWidth />
+                <Button fullWidth variant="contained" size="large" className="login-btn" onClick={() => setPage("home")}>
+                  Sign Up →
+                </Button>
+              
+              </Stack>
+              
+
+              {/* ลิงก์ไปหน้า Login */}
+              <Typography sx={{ textAlign: "center", mt: 2, fontSize: 14, color: "#64748B" }}>
+                Already have an account?{" "}
+                <span onClick={() => setPage("login")} style={{ color: "#38BDF8", cursor: "pointer", fontWeight: 600 }}>
+                  Sign In
+                </span>
+              </Typography>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* ── LOGIN PAGE ── */}
       {page === "login" && (
-        <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", px: 3, position: "relative", zIndex: 1 }}>
-          <Card sx={{ width: "100%", maxWidth: 420, borderRadius: 4, p: 2, boxShadow: "0 0 60px rgba(56,189,248,0.08)" }}>
+        <div className="login-page">
+          <Card className="login-card">
             <CardContent>
-              <Box sx={{ width: 52, height: 52, background: "linear-gradient(135deg,#38BDF8,#6366F1)", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", mb: 3 }}>
+              <div className="login-icon-box">
                 <Candy size={26} color="#fff" />
-              </Box>
-              <Typography sx={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 28, mb: 0.5 }}>Welcome</Typography>
-              <Typography sx={{ color: "#64748B", fontSize: 14, mb: 4 }}>Please log in to continue.</Typography>
+              </div>
+              <Typography className="login-title">Welcome</Typography>
+              <Typography className="login-sub">Please log in to continue.</Typography>
 
               <Stack gap={2.5}>
-                <TextField label="Username" placeholder="Enter your username" fullWidth value={user} onChange={(e) => setUser(e.target.value)} />
-                <TextField label="Password" type="password" placeholder="Enter your password" fullWidth value={pass} onChange={(e) => setPass(e.target.value)} />
-                <Button fullWidth variant="contained" size="large" onClick={() => setPage("home")}
-                  sx={{ background: "linear-gradient(135deg,#38BDF8,#6366F1)", mt: 1, py: 1.5, fontSize: 15 }}>
+                <TextField label="Username" placeholder="Enter your username" fullWidth
+                  value={user} onChange={(e) => setUser(e.target.value)} />
+                <TextField label="Password" type="password" placeholder="Enter your password" fullWidth
+                  value={pass} onChange={(e) => setPass(e.target.value)} />
+                <Button fullWidth variant="contained" size="large" className="login-btn" onClick={() => setPage("home")}>
                   Login →
                 </Button>
+                {/*
+                <Button fullWidth variant="contained" size="large" className="login-btn"
+                  onClick={() => {
+                    setToast({ open: true, message: "Username or password is incorrect", severity: "error" });
+                  }}
+                >
+                  Login2 →
+                </Button> 
+                */}
+                <Typography sx={{ textAlign: "center", mt: 2, fontSize: 14, color: "#64748B" }}>
+                Don't have an account?{" "}
+                <span onClick={() => setPage("signup")} style={{ color: "#38BDF8", cursor: "pointer", fontWeight: 600 }}>
+                  Sign Up
+                </span>
+                </Typography>
               </Stack>
             </CardContent>
           </Card>
-        </Box>
+        </div>
       )}
 
       {/* ── HOME PAGE ── */}
       {page === "home" && (
-        <Box sx={{ pt: "100px", px: 3, pb: 5, position: "relative", zIndex: 1, maxWidth: 760, margin: "0 auto" }}>
-          <Box mb={4}>
-            <Typography sx={{ fontSize: 13, color: "#38BDF8", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", mb: 1 }}>
-              Hello, {user}
-            </Typography>
-            <Typography sx={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 38, lineHeight: 1.1 }}>
-              Activity, <Box component="span" sx={{ color: "#38BDF8" }}>In coming</Box>
-            </Typography>
-          </Box>
+        <div className="home-page">
+          <Typography className="home-greeting">Hello, {user}</Typography>
+          <Typography className="home-title">
+            Activity, <span className="home-title-accent">In coming</span>
+          </Typography>
 
           <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-            <Typography sx={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.2, color: "#64748B" }}>
-              All Schedules
-            </Typography>
-            <Button variant="contained" size="small" startIcon={<Plus size={14} />} onClick={() => setShowAddModal(true)}
-              sx={{ fontSize: 13, fontWeight: 700, color: "#0A0F1E" }}>
+            <Typography className="section-label">All Schedules</Typography>
+            <Button variant="contained" size="small" className="add-btn" startIcon={<Plus size={14} />} onClick={() => setShowAddModal(true)}>
               Add
             </Button>
           </Stack>
 
           <Stack gap={1.5}>
             {activities.map((a) => (
-              <Card key={a.id} sx={{ borderRadius: 3, transition: "all 0.2s", "&:hover": { borderColor: "#38BDF855", transform: "translateX(4px)" } }}>
+              <Card key={a.id} className="activity-card">
                 <CardActionArea onClick={() => setSelectedActivity(a)}>
                   <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5, py: 2.5 }}>
-                    <Box sx={{ minWidth: 56, textAlign: "center", background: "#1a2235", borderRadius: 2, py: 1.5, px: 1 }}>
-                      <Typography sx={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 22, color: "#38BDF8", lineHeight: 1 }}>{a.day}</Typography>
-                      <Typography sx={{ fontSize: 10, color: "#64748B", textTransform: "uppercase", letterSpacing: 0.5, mt: 0.3 }}>{a.month}</Typography>
-                    </Box>
+                    <div className="activity-date-box">
+                      <Typography className="activity-date-day">{a.day}</Typography>
+                      <Typography className="activity-date-month">{a.month}</Typography>
+                    </div>
                     <Box flex={1}>
-                      <Typography sx={{ fontWeight: 600, fontSize: 16, mb: 0.5 }}>{a.name}</Typography>
+                      <Typography className="activity-name">{a.name}</Typography>
                       <Stack direction="row" gap={1.5}>
-                        <Typography sx={{ fontSize: 13, color: "#64748B", display: "flex", alignItems: "center", gap: 0.5 }}>
-                          <Clock size={12} /> {a.time}
-                        </Typography>
-                        <Typography sx={{ fontSize: 13, color: "#64748B", display: "flex", alignItems: "center", gap: 0.5 }}>
-                          <MapPin size={12} /> {a.place}
-                        </Typography>
+                        <Typography className="activity-meta-text"><Clock size={12} /> {a.time}</Typography>
+                        <Typography className="activity-meta-text"><MapPin size={12} /> {a.place}</Typography>
                       </Stack>
                     </Box>
-                    <Chip label={a.tag} size="small" sx={{ background: "#38BDF822", color: "#38BDF8", border: "1px solid #38BDF833" }} />
-                    <Typography sx={{ fontSize: 22, color: "#1E2D45" }}>›</Typography>
+                    <Chip className="activity-chip" label={a.tag} size="small" />
+                    <Typography className="activity-arrow">›</Typography>
                   </CardContent>
                 </CardActionArea>
               </Card>
             ))}
           </Stack>
-        </Box>
+          
+        </div>
       )}
 
       {/* ── CREDITS PAGE ── */}
       {page === "credits" && (
-        <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", px: 3, pt: "80px", position: "relative", zIndex: 1 }}>
+        <div className="credits-page">
           <Box width="100%" maxWidth={660}>
             <Box textAlign="center" mb={6}>
-              <Chip label="GROUP PROJECT" size="small" sx={{ background: "#38BDF822", color: "#38BDF8", border: "1px solid #38BDF844", mb: 2, letterSpacing: 0.8 }} />
-              <Typography sx={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 36 }}>Members</Typography>
-              <Typography sx={{ color: "#64748B", fontSize: 15, mt: 1 }}>Sub</Typography>
+              <Chip className="credits-badge" label="GROUP PROJECT" size="small" />
+              <Typography className="credits-title">Members</Typography>
+              <Typography className="credits-sub">Sub</Typography>
             </Box>
 
             <Stack gap={1.5}>
               {members.map((m, i) => (
-                <Card key={i} sx={{ borderRadius: 3, transition: "all 0.2s", "&:hover": { borderColor: "#38BDF855", transform: "translateY(-2px)" } }}>
+                <Card key={i} className="member-card">
                   <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Box sx={{ width: 46, height: 46, borderRadius: 2, background: m.bg, color: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: 18, flexShrink: 0 }}>
+                    <div className="member-avatar" style={{ background: m.bg, color: m.color }}>
                       {m.name.charAt(0)}
-                    </Box>
-                    <Typography sx={{ fontWeight: 600, fontSize: 15 }}>{m.name}</Typography>
+                    </div>
+                    <Typography className="member-name">{m.name}</Typography>
                   </CardContent>
                 </Card>
               ))}
             </Stack>
           </Box>
-        </Box>
+        </div>
       )}
 
       {/* ── PROFILE PAGE ── */}
       {page === "profile" && (
-        <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", px: 3, position: "relative", zIndex: 1 }}>
-          <Card sx={{ width: "100%", maxWidth: 420, borderRadius: 4, p: 2, textAlign: "center" }}>
+        <div className="profile-page">
+          <Card className="profile-card">
             <CardContent>
-              <Box sx={{ width: 52, height: 52, background: "linear-gradient(135deg,#38BDF8,#6366F1)", borderRadius: 3, display: "flex", alignItems: "center", justifyContent: "center", mb: 3, mx: "auto" }}>
+              <div className="login-icon-box" style={{ margin: "0 auto 24px" }}>
                 <User size={26} color="#fff" />
-              </Box>
-              <Typography sx={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 28, mb: 0.5 }}>{user || "Profile"}</Typography>
-              <Typography sx={{ color: "#64748B", fontSize: 14 }}>Profile page — coming soon</Typography>
+              </div>
+              <Typography className="profile-title">{user || "Profile"}</Typography>
+              <Typography className="profile-sub">Profile page — coming soon</Typography>
             </CardContent>
           </Card>
-        </Box>
+        </div>
       )}
     </ThemeProvider>
   );
