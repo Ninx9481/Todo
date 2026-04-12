@@ -253,6 +253,9 @@ input[type="time"] {
 .member-card {
   border-radius: 12px !important;
   transition: all 0.2s !important;
+  min-height: 80px;
+  display: flex !important;
+  align-items: center !important;
 }
 
 .member-card:hover {

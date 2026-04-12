@@ -45,9 +45,9 @@ const activities = [
 ];
 
 const members = [
-  { name: "Nine", color: "#38BDF8", bg: "#0c2a3a" },
-  { name: "Fern", color: "#A78BFA", bg: "#1e1535" },
-  { name: "Mei",  color: "#34D399", bg: "#0d2a22" },
+  { name: "Nine", id: "6634412923" , color: "#38BDF8", bg: "#0c2a3a" },
+  { name: "Fern", id:"6634413523", color: "#A78BFA", bg: "#1e1535" },
+  { name: "Mei", id:"6634416423",  color: "#34D399", bg: "#0d2a22" },
 ];
 
 // ── App ─────────────────────────────────────────────────────
@@ -59,6 +59,7 @@ export default function App() {
   const [selectedActivity, setSelectedActivity] = useState(null);
   const [menuAnchor, setMenuAnchor]             = useState(null);
   const [toast, setToast] = useState({ open: false, message: "", severity: "error" });
+  const [email, setEmail] = useState("");
 
   const isLoggedIn = page !== "login" && page !== "signup";
   const goTo = (p) => { setPage(p); setMenuAnchor(null); };
@@ -237,8 +238,10 @@ export default function App() {
               <Typography className="login-sub">Sign up to get started.</Typography>
 
               <Stack gap={2.5}>
-                <TextField label="Email" type="email" placeholder="Enter your email" fullWidth />
-                <TextField label="Username" placeholder="Enter your username" fullWidth />
+                <TextField label="Email" type="email" placeholder="Enter your email" fullWidth
+                  value={email} onChange={(e) => setEmail(e.target.value)} />
+                <TextField label="Username" placeholder="Enter your username" fullWidth
+                  value={user} onChange={(e) => setUser(e.target.value)} />
                 <TextField label="Password" type="password" placeholder="Enter your password" fullWidth />
                 <Button fullWidth variant="contained" size="large" className="login-btn" onClick={() => setPage("home")}>
                   Sign Up →
@@ -348,17 +351,17 @@ export default function App() {
             <Box textAlign="center" mb={6}>
               <Chip className="credits-badge" label="GROUP PROJECT" size="small" />
               <Typography className="credits-title">Members</Typography>
-              <Typography className="credits-sub">Sub</Typography>
+              <Typography className="credits-sub">one in a million</Typography>
             </Box>
 
             <Stack gap={1.5}>
               {members.map((m, i) => (
                 <Card key={i} className="member-card">
-                  <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <CardContent sx={{ display: "flex", alignItems: "center", gap: 2, width: "100%", "&:last-child": { pb: 2 }, "&:first-of-type": { pt: 2 } }}>
                     <div className="member-avatar" style={{ background: m.bg, color: m.color }}>
                       {m.name.charAt(0)}
                     </div>
-                    <Typography className="member-name">{m.name}</Typography>
+                    <Typography className="member-name">{m.name} — {m.id}</Typography>
                   </CardContent>
                 </Card>
               ))}
@@ -375,8 +378,21 @@ export default function App() {
               <div className="login-icon-box" style={{ margin: "0 auto 24px" }}>
                 <User size={26} color="#fff" />
               </div>
-              <Typography className="profile-title">{user || "Profile"}</Typography>
-              <Typography className="profile-sub">Profile page — coming soon</Typography>
+
+              <Typography className="profile-title">{"Profile"}</Typography>
+
+              <Stack gap={1.5} mt={3}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Typography sx={{ fontSize: 13, color: "#64748B", fontWeight: 600 }}>Username</Typography>
+                  <Typography sx={{ fontSize: 15, fontWeight: 600 }}>{user || "-"}</Typography>
+                </Box>
+                <Divider />
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Typography sx={{ fontSize: 13, color: "#64748B", fontWeight: 600 }}>Email</Typography>
+                  <Typography sx={{ fontSize: 15, fontWeight: 600 }}>{email || "-"}</Typography>
+                </Box>
+              </Stack>
+
             </CardContent>
           </Card>
         </div>
