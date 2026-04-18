@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import "./App.css";
 import {
   Candy, Home, Users, Menu, LogOut, User,
@@ -39,10 +40,7 @@ const theme = createTheme({
 });
 
 // ── Data ────────────────────────────────────────────────────
-const activities = [
-  { id: 1, day: "3",  month: "April", name: "THIS IS FOR World Tour", time: "07:30 PM", place: "Boston, MA", tag: "Concert", description: "TWICE 5TH WORLD TOUR 'READY TO BE' — Floor GA standing. Doors open at 6:00 PM. Do not forget to bring your lightstick!" },
-  { id: 2, day: "4",  month: "April", name: "THIS IS FOR World Tour", time: "08:00 PM", place: "Boston, MA", tag: "Concert", description: "Night 2 of TWICE in Boston. Seat: Section 104, Row C. Pick up tickets at will-call window." },
-];
+const API_BASE_URL = "http://localhost:3000";
 
 const members = [
   { name: "Nine", id: "6634412923" , color: "#38BDF8", bg: "#0c2a3a" },
@@ -60,9 +58,234 @@ export default function App() {
   const [menuAnchor, setMenuAnchor]             = useState(null);
   const [toast, setToast] = useState({ open: false, message: "", severity: "error" });
   const [email, setEmail] = useState("");
+  const [activities, setActivities] = useState([]);
+  const [token, setToken] = useState("");
+  const [loadingActivities, setLoadingActivities] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [addLoading, setAddLoading] = useState(false);
+  const [editingActivityId, setEditingActivityId] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [newActivityName, setNewActivityName] = useState("");
+  const [newActivityDate, setNewActivityDate] = useState("");
+  const [newActivityTime, setNewActivityTime] = useState("");
+  const [newActivityPlace, setNewActivityPlace] = useState("");
+  const [newActivityTag, setNewActivityTag] = useState("");
+  const [newActivityDescription, setNewActivityDescription] = useState("");
 
   const isLoggedIn = page !== "login" && page !== "signup";
   const goTo = (p) => { setPage(p); setMenuAnchor(null); };
+
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchActivities = async () => {
+      setLoadingActivities(true);
+      try {
+        const response = await axios.get(`${API_BASE_URL}/activities`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const normalized = response.data.map((item) => {
+          const date = item.activity_date ? new Date(item.activity_date) : null;
+          return {
+            id: item.id,
+            activity_date: item.activity_date || "",
+            day: date ? String(date.getDate()).padStart(2, "0") : item.activity_date || "",
+            month: date ? date.toLocaleString("default", { month: "long" }) : "",
+            name: item.activity_name || "Untitled activity",
+            time: item.activity_time || "",
+            place: item.place || "",
+            tag: item.tag || "General",
+            description: item.description || "",
+          };
+        });
+
+        setActivities(normalized);
+      } catch (error) {
+        setToast({
+          open: true,
+          message: error.response?.data?.message || "Could not load activities",
+          severity: "error"
+        });
+      } finally {
+        setLoadingActivities(false);
+      }
+    };
+
+    fetchActivities();
+  }, [token]);
+
+  const handleSignup = async () => {
+    setAuthLoading(true);
+    try {
+      await axios.post(`${API_BASE_URL}/users`, {
+        name: user,
+        email,
+        password: pass,
+      });
+      setToast({ open: true, message: "Account created. Please sign in.", severity: "success" });
+      setPage("login");
+      setPass("");
+    } catch (error) {
+      setToast({
+        open: true,
+        message: error.response?.data?.message || "Signup failed",
+        severity: "error"
+      });
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    setAuthLoading(true);
+    try {
+      const response = await axios.post(`${API_BASE_URL}/tokens`, {
+        email,
+        password: pass,
+      });
+      setToken(response.data.token);
+      setUser((current) => current || email);
+      setToast({ open: true, message: "Login successful", severity: "success" });
+      setPage("home");
+      setPass("");
+    } catch (error) {
+      setToast({
+        open: true,
+        message: error.response?.data?.message || "Login failed",
+        severity: "error"
+      });
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const resetAddForm = () => {
+    setNewActivityName("");
+    setNewActivityDate("");
+    setNewActivityTime("");
+    setNewActivityPlace("");
+    setNewActivityTag("");
+    setNewActivityDescription("");
+    setEditingActivityId(null);
+  };
+
+  const openEditActivity = (activity) => {
+    setSelectedActivity(null);
+    setEditingActivityId(activity.id);
+    setNewActivityName(activity.name);
+    setNewActivityDate(activity.activity_date || "");
+    setNewActivityTime(activity.time || "");
+    setNewActivityPlace(activity.place || "");
+    setNewActivityTag(activity.tag || "");
+    setNewActivityDescription(activity.description || "");
+    setShowAddModal(true);
+  };
+
+  const handleSaveActivity = async () => {
+    if (!token) {
+      setToast({ open: true, message: "Please log in first.", severity: "error" });
+      return;
+    }
+
+    if (!newActivityName || !newActivityDate || !newActivityTime) {
+      setToast({ open: true, message: "Please complete the name, date, and time.", severity: "error" });
+      return;
+    }
+
+    setAddLoading(true);
+    try {
+      const payload = {
+        activity_name: newActivityName,
+        activity_date: newActivityDate,
+        activity_time: newActivityTime,
+        place: newActivityPlace,
+        tag: newActivityTag,
+        description: newActivityDescription,
+      };
+
+      if (editingActivityId) {
+        const response = await axios.put(`${API_BASE_URL}/activities/${editingActivityId}`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const item = response.data;
+        const date = item.activity_date ? new Date(item.activity_date) : null;
+        const normalized = {
+          id: item.id,
+          activity_date: item.activity_date || "",
+          day: date ? String(date.getDate()).padStart(2, "0") : item.activity_date || "",
+          month: date ? date.toLocaleString("default", { month: "long" }) : "",
+          name: item.activity_name || "Untitled activity",
+          time: item.activity_time || "",
+          place: item.place || "",
+          tag: item.tag || "General",
+          description: item.description || "",
+        };
+
+        setActivities((prev) => prev.map((a) => a.id === item.id ? normalized : a));
+        setToast({ open: true, message: "Activity updated successfully.", severity: "success" });
+      } else {
+        const response = await axios.post(`${API_BASE_URL}/activities`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const item = response.data;
+        const date = item.activity_date ? new Date(item.activity_date) : null;
+        const normalized = {
+          id: item.id,
+          activity_date: item.activity_date || "",
+          day: date ? String(date.getDate()).padStart(2, "0") : item.activity_date || "",
+          month: date ? date.toLocaleString("default", { month: "long" }) : "",
+          name: item.activity_name || "Untitled activity",
+          time: item.activity_time || "",
+          place: item.place || "",
+          tag: item.tag || "General",
+          description: item.description || "",
+        };
+
+        setActivities((prev) => [normalized, ...prev]);
+        setToast({ open: true, message: "Activity added successfully.", severity: "success" });
+      }
+
+      setShowAddModal(false);
+      resetAddForm();
+    } catch (error) {
+      setToast({
+        open: true,
+        message: error.response?.data?.message || (editingActivityId ? "Could not update activity" : "Could not add activity"),
+        severity: "error"
+      });
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
+  const handleDeleteActivity = async (activityId) => {
+    if (!token) {
+      setToast({ open: true, message: "Please log in first.", severity: "error" });
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      await axios.delete(`${API_BASE_URL}/activities/${activityId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setActivities((prev) => prev.filter((a) => a.id !== activityId));
+      setSelectedActivity(null);
+      setToast({ open: true, message: "Activity deleted successfully.", severity: "success" });
+    } catch (error) {
+      setToast({
+        open: true,
+        message: error.response?.data?.message || "Could not delete activity",
+        severity: "error"
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -139,44 +362,83 @@ export default function App() {
       )}
 
       {/* ── ADD MODAL ── */}
-      <Dialog open={showAddModal} onClose={() => setShowAddModal(false)} fullWidth maxWidth="sm">
+      <Dialog open={showAddModal} onClose={() => { setShowAddModal(false); resetAddForm(); }} fullWidth maxWidth="sm">
         <DialogTitle className="modal-title">
-          Add Activity
-          <IconButton className="modal-close-btn" size="small" onClick={() => setShowAddModal(false)}>
+          {editingActivityId ? "Edit Activity" : "Add Activity"}
+          <IconButton className="modal-close-btn" size="small" onClick={() => { setShowAddModal(false); resetAddForm(); }}>
             <X size={14} />
           </IconButton>
         </DialogTitle>
 
         <DialogContent>
           <Stack gap={2} mt={1}>
-            <TextField label="Activity Name" placeholder="e.g. TWICE World Tour" fullWidth />
+            <TextField
+              label="Activity Name"
+              placeholder="e.g. TWICE World Tour"
+              fullWidth
+              value={newActivityName}
+              onChange={(e) => setNewActivityName(e.target.value)}
+            />
 
             <Stack direction="row" gap={2}>
-              <TextField label="Date" type="date" fullWidth InputLabelProps={{ shrink: true }}
-                InputProps={{ startAdornment: <Calendar size={15} className="modal-icon-white" /> }} />
-              <TextField label="Time" type="time" fullWidth InputLabelProps={{ shrink: true }}
-                InputProps={{ startAdornment: <Clock size={15} className="modal-icon-white" /> }} />
+              <TextField
+                label="Date"
+                type="date"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                value={newActivityDate}
+                onChange={(e) => setNewActivityDate(e.target.value)}
+                InputProps={{ startAdornment: <Calendar size={15} className="modal-icon-white" /> }}
+              />
+              <TextField
+                label="Time"
+                type="time"
+                fullWidth
+                InputLabelProps={{ shrink: true }}
+                value={newActivityTime}
+                onChange={(e) => setNewActivityTime(e.target.value)}
+                InputProps={{ startAdornment: <Clock size={15} className="modal-icon-white" /> }}
+              />
             </Stack>
 
             <Stack direction="row" gap={2}>
-              <TextField label="Place" placeholder="e.g. Boston, MA" fullWidth
-                InputProps={{ startAdornment: <MapPin size={15} className="modal-icon-muted" /> }} />
-              <TextField label="Tag" placeholder="e.g. Concert" fullWidth
-                InputProps={{ startAdornment: <Tag size={15} className="modal-icon-muted" /> }} />
+              <TextField
+                label="Place"
+                placeholder="e.g. Boston, MA"
+                fullWidth
+                value={newActivityPlace}
+                onChange={(e) => setNewActivityPlace(e.target.value)}
+                InputProps={{ startAdornment: <MapPin size={15} className="modal-icon-muted" /> }}
+              />
+              <TextField
+                label="Tag"
+                placeholder="e.g. Concert"
+                fullWidth
+                value={newActivityTag}
+                onChange={(e) => setNewActivityTag(e.target.value)}
+                InputProps={{ startAdornment: <Tag size={15} className="modal-icon-muted" /> }}
+              />
             </Stack>
 
-            <TextField label="Description" placeholder="Add details, notes, or reminders..."
-              multiline minRows={3} fullWidth
-              InputProps={{ startAdornment: <FileText size={15} className="modal-icon-muted-top" /> }} />
+            <TextField
+              label="Description"
+              placeholder="Add details, notes, or reminders..."
+              multiline
+              minRows={3}
+              fullWidth
+              value={newActivityDescription}
+              onChange={(e) => setNewActivityDescription(e.target.value)}
+              InputProps={{ startAdornment: <FileText size={15} className="modal-icon-muted-top" /> }}
+            />
           </Stack>
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-          <Button fullWidth variant="outlined" color="inherit" className="modal-cancel-btn" onClick={() => setShowAddModal(false)}>
+          <Button fullWidth variant="outlined" color="inherit" className="modal-cancel-btn" onClick={() => { setShowAddModal(false); resetAddForm(); }}>
             Cancel
           </Button>
-          <Button fullWidth variant="contained" startIcon={<Plus size={15} />}>
-            Add Activity
+          <Button fullWidth variant="contained" startIcon={<Plus size={15} />} onClick={handleSaveActivity} disabled={addLoading}>
+            {editingActivityId ? "Update Activity" : "Add Activity"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -220,8 +482,12 @@ export default function App() {
             </DialogContent>
 
             <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-              <Button fullWidth variant="outlined" color="error" startIcon={<Trash2 size={14} />}>Delete</Button>
-              <Button fullWidth variant="contained" startIcon={<Pencil size={14} />}>Edit</Button>
+              <Button fullWidth variant="outlined" color="error" startIcon={<Trash2 size={14} />} onClick={() => handleDeleteActivity(selectedActivity.id)} disabled={deleteLoading}>
+                Delete
+              </Button>
+              <Button fullWidth variant="contained" startIcon={<Pencil size={14} />} onClick={() => openEditActivity(selectedActivity)}>
+                Edit
+              </Button>
             </DialogActions>
           </>
         )}
@@ -242,8 +508,9 @@ export default function App() {
                   value={email} onChange={(e) => setEmail(e.target.value)} />
                 <TextField label="Username" placeholder="Enter your username" fullWidth
                   value={user} onChange={(e) => setUser(e.target.value)} />
-                <TextField label="Password" type="password" placeholder="Enter your password" fullWidth />
-                <Button fullWidth variant="contained" size="large" className="login-btn" onClick={() => setPage("home")}>
+                <TextField label="Password" type="password" placeholder="Enter your password" fullWidth
+                  value={pass} onChange={(e) => setPass(e.target.value)} />
+                <Button fullWidth variant="contained" size="large" className="login-btn" onClick={handleSignup} disabled={authLoading}>
                   Sign Up →
                 </Button>
               
@@ -274,11 +541,11 @@ export default function App() {
               <Typography className="login-sub">Please log in to continue.</Typography>
 
               <Stack gap={2.5}>
-                <TextField label="Username" placeholder="Enter your username" fullWidth
-                  value={user} onChange={(e) => setUser(e.target.value)} />
+                <TextField label="Email" type="email" placeholder="Enter your email" fullWidth
+                  value={email} onChange={(e) => setEmail(e.target.value)} />
                 <TextField label="Password" type="password" placeholder="Enter your password" fullWidth
                   value={pass} onChange={(e) => setPass(e.target.value)} />
-                <Button fullWidth variant="contained" size="large" className="login-btn" onClick={() => setPage("home")}>
+                <Button fullWidth variant="contained" size="large" className="login-btn" onClick={handleLogin} disabled={authLoading}>
                   Login →
                 </Button>
                 {/*
@@ -318,27 +585,33 @@ export default function App() {
           </Stack>
 
           <Stack gap={1.5}>
-            {activities.map((a) => (
-              <Card key={a.id} className="activity-card">
-                <CardActionArea onClick={() => setSelectedActivity(a)}>
-                  <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5, py: 2.5 }}>
-                    <div className="activity-date-box">
-                      <Typography className="activity-date-day">{a.day}</Typography>
-                      <Typography className="activity-date-month">{a.month}</Typography>
-                    </div>
-                    <Box flex={1}>
-                      <Typography className="activity-name">{a.name}</Typography>
-                      <Stack direction="row" gap={1.5}>
-                        <Typography className="activity-meta-text"><Clock size={12} /> {a.time}</Typography>
-                        <Typography className="activity-meta-text"><MapPin size={12} /> {a.place}</Typography>
-                      </Stack>
-                    </Box>
-                    <Chip className="activity-chip" label={a.tag} size="small" />
-                    <Typography className="activity-arrow">›</Typography>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
-            ))}
+            {loadingActivities ? (
+              <Typography sx={{ color: "#64748B" }}>Loading activities…</Typography>
+            ) : activities.length > 0 ? (
+              activities.map((a) => (
+                <Card key={a.id} className="activity-card">
+                  <CardActionArea onClick={() => setSelectedActivity(a)}>
+                    <CardContent sx={{ display: "flex", alignItems: "center", gap: 2.5, py: 2.5 }}>
+                      <div className="activity-date-box">
+                        <Typography className="activity-date-day">{a.day}</Typography>
+                        <Typography className="activity-date-month">{a.month}</Typography>
+                      </div>
+                      <Box flex={1}>
+                        <Typography className="activity-name">{a.name}</Typography>
+                        <Stack direction="row" gap={1.5}>
+                          <Typography className="activity-meta-text"><Clock size={12} /> {a.time}</Typography>
+                          <Typography className="activity-meta-text"><MapPin size={12} /> {a.place}</Typography>
+                        </Stack>
+                      </Box>
+                      <Chip className="activity-chip" label={a.tag} size="small" />
+                      <Typography className="activity-arrow">›</Typography>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              ))
+            ) : (
+              <Typography sx={{ color: "#64748B" }}>No activities found yet. Create an account, log in, and start adding schedules.</Typography>
+            )}
           </Stack>
           
         </div>
